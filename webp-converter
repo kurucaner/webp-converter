@@ -1,25 +1,26 @@
 #!/bin/bash
 
-# WebP Converter - A simple PNG to WebP converter
+# WebP Converter - A simple PNG/JPG to WebP converter
 # Usage: ./webp-converter
 
 show_help() {
     cat << EOF
 🖼️  WebP Converter
 
-Convert PNG files to WebP format with ease!
+Convert PNG/JPG files to WebP format with ease!
 
 USAGE:
     ./webp-converter [options]
 
 OPTIONS:
-    -f, --file <file>        Convert a single PNG file
-    -d, --dir <directory>    Convert all PNG files in directory
+    -f, --file <file>        Convert a single PNG/JPG file
+    -d, --dir <directory>    Convert all PNG/JPG files in directory
     -q, --quality <0-100>    Set quality (default: 100)
     -h, --help              Show this help message
 
 EXAMPLES:
     ./webp-converter -f image.png
+    ./webp-converter -f photo.jpg
     ./webp-converter -f image.png -q 90
     ./webp-converter -d ./photos -q 85
     ./webp-converter                    # Interactive mode
@@ -36,8 +37,8 @@ interactive_mode() {
     echo "🖼️  Welcome to WebP Converter!"
     echo ""
     echo "What would you like to do?"
-    echo "1) Convert a single PNG file"
-    echo "2) Convert all PNG files in a directory"
+    echo "1) Convert a single PNG/JPG file"
+    echo "2) Convert all PNG/JPG files in a directory"
     echo "3) Show help"
     echo "4) Exit"
     echo ""
@@ -46,7 +47,7 @@ interactive_mode() {
     case $choice in
         1)
             echo ""
-            read -p "Enter PNG file path: " file_path
+            read -p "Enter image file path (PNG/JPG): " file_path
             read -p "Enter quality (0-100, default 100): " quality
             quality=${quality:-100}
             
@@ -86,12 +87,20 @@ convert_single() {
     local input_file="$1"
     local quality="$2"
     
-    if [[ ! "$input_file" =~ \.png$ ]]; then
-        echo "❌ Input file must be a .png file!"
+    if [[ ! "$input_file" =~ \.(png|jpg|jpeg)$ ]]; then
+        echo "❌ Input file must be a .png, .jpg, or .jpeg file!"
         return 1
     fi
     
-    local output_file="${input_file%.png}.webp"
+    # Generate output filename based on extension
+    local output_file
+    if [[ "$input_file" =~ \.png$ ]]; then
+        output_file="${input_file%.png}.webp"
+    elif [[ "$input_file" =~ \.jpg$ ]]; then
+        output_file="${input_file%.jpg}.webp"
+    elif [[ "$input_file" =~ \.jpeg$ ]]; then
+        output_file="${input_file%.jpeg}.webp"
+    fi
     
     echo "🔄 Converting '$input_file' to '$output_file' with quality $quality..."
     
@@ -114,35 +123,47 @@ convert_batch() {
     local target_dir="$1"
     local quality="$2"
     
-    echo "🔄 Batch converting PNG files to WebP..."
+    echo "🔄 Batch converting PNG/JPG files to WebP..."
     echo "📂 Directory: $target_dir"
     echo "🎯 Quality: $quality"
     echo ""
     
+    # Count image files
     local png_count=$(find "$target_dir" -maxdepth 1 -name "*.png" | wc -l)
+    local jpg_count=$(find "$target_dir" -maxdepth 1 \( -name "*.jpg" -o -name "*.jpeg" \) | wc -l)
+    local total_count=$((png_count + jpg_count))
     
-    if [ "$png_count" -eq 0 ]; then
-        echo "No PNG files found in '$target_dir'"
+    if [ "$total_count" -eq 0 ]; then
+        echo "No PNG/JPG files found in '$target_dir'"
         return 0
     fi
     
-    echo "Found $png_count PNG file(s) to convert..."
+    echo "Found $total_count image file(s) to convert ($png_count PNG, $jpg_count JPG/JPEG)..."
     echo ""
     
     local converted=0
     local total_original_size=0
     local total_webp_size=0
     
-    for png_file in "$target_dir"/*.png; do
-        [ ! -f "$png_file" ] && continue
+    # Function to convert a single file
+    convert_file_batch() {
+        local input_file="$1"
+        local filename=$(basename "$input_file")
+        local output_file
         
-        local filename=$(basename "$png_file")
-        local output_file="${png_file%.png}.webp"
+        # Generate output filename based on extension
+        if [[ "$input_file" =~ \.png$ ]]; then
+            output_file="${input_file%.png}.webp"
+        elif [[ "$input_file" =~ \.jpg$ ]]; then
+            output_file="${input_file%.jpg}.webp"
+        elif [[ "$input_file" =~ \.jpeg$ ]]; then
+            output_file="${input_file%.jpeg}.webp"
+        fi
         
         echo "Converting: $filename"
         
-        if cwebp -q "$quality" "$png_file" -o "$output_file" 2>/dev/null; then
-            local original_size=$(stat -f%z "$png_file")
+        if cwebp -q "$quality" "$input_file" -o "$output_file" 2>/dev/null; then
+            local original_size=$(stat -f%z "$input_file")
             local webp_size=$(stat -f%z "$output_file")
             
             total_original_size=$((total_original_size + original_size))
@@ -153,11 +174,23 @@ convert_batch() {
         else
             echo "  ❌ Failed"
         fi
+    }
+    
+    # Process PNG files
+    for png_file in "$target_dir"/*.png; do
+        [ ! -f "$png_file" ] && continue
+        convert_file_batch "$png_file"
+    done
+    
+    # Process JPG files
+    for jpg_file in "$target_dir"/*.jpg "$target_dir"/*.jpeg; do
+        [ ! -f "$jpg_file" ] && continue
+        convert_file_batch "$jpg_file"
     done
     
     echo ""
     echo "📊 Conversion Summary:"
-    echo "  Converted: $converted/$png_count files"
+    echo "  Converted: $converted/$total_count files"
     
     if [ "$converted" -gt 0 ]; then
         echo "  Total original size: $(numfmt --to=iec-i --suffix=B $total_original_size)"

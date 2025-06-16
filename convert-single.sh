@@ -1,11 +1,13 @@
 #!/bin/bash
 
-# Convert a single PNG file to WebP
+# Convert a single PNG/JPG file to WebP
 # Usage: ./convert-single.sh input.png [quality]
+#        ./convert-single.sh input.jpg [quality]
 
 if [ $# -eq 0 ]; then
-    echo "Usage: $0 <input.png> [quality]"
+    echo "Usage: $0 <input.png|input.jpg> [quality]"
     echo "Example: $0 image.png 100"
+    echo "Example: $0 photo.jpg 100"
     echo "Quality range: 0-100 (default: 100)"
     exit 1
 fi
@@ -19,14 +21,20 @@ if [ ! -f "$INPUT_FILE" ]; then
     exit 1
 fi
 
-# Check if input is a PNG file
-if [[ ! "$INPUT_FILE" =~ \.png$ ]]; then
-    echo "Error: Input file must be a .png file!"
+# Check if input is a PNG or JPG file
+if [[ ! "$INPUT_FILE" =~ \.(png|jpg|jpeg)$ ]]; then
+    echo "Error: Input file must be a .png, .jpg, or .jpeg file!"
     exit 1
 fi
 
-# Generate output filename
-OUTPUT_FILE="${INPUT_FILE%.png}.webp"
+# Generate output filename (remove original extension and add .webp)
+if [[ "$INPUT_FILE" =~ \.png$ ]]; then
+    OUTPUT_FILE="${INPUT_FILE%.png}.webp"
+elif [[ "$INPUT_FILE" =~ \.jpg$ ]]; then
+    OUTPUT_FILE="${INPUT_FILE%.jpg}.webp"
+elif [[ "$INPUT_FILE" =~ \.jpeg$ ]]; then
+    OUTPUT_FILE="${INPUT_FILE%.jpeg}.webp"
+fi
 
 # Convert the file
 echo "Converting '$INPUT_FILE' to '$OUTPUT_FILE' with quality $QUALITY..."

@@ -1,15 +1,16 @@
 # 🖼️ WebP Converter
 
-A simple and efficient command-line tool to convert PNG files to WebP format on macOS. Supports both single file and batch conversion with customizable quality settings.
+A simple and efficient command-line tool to convert PNG and JPEG files to WebP format on macOS. Supports both single file and batch conversion with customizable quality settings.
 
 ## ✨ Features
 
-- 🔄 **Single file conversion** - Convert one PNG file at a time
-- 📁 **Batch conversion** - Convert all PNG files in a directory
-- 🎯 **Quality control** - Adjustable quality from 0-100
+- 🔄 **Single file conversion** - Convert one PNG/JPG file at a time
+- 📁 **Batch conversion** - Convert all PNG/JPG files in a directory
+- 🎯 **Quality control** - Adjustable quality from 0-100 (default: 100)
 - 📊 **Size comparison** - Shows file size reduction after conversion
 - 🖥️ **Interactive mode** - User-friendly menu interface
 - ⚡ **Fast processing** - Uses Google's official WebP tools
+- 🖼️ **Multiple formats** - Supports PNG, JPG, and JPEG files
 
 ## 🛠️ Prerequisites
 
@@ -70,13 +71,16 @@ libsharpyuv: 0.4.1
 **Command Line Options:**
 
 ```bash
-# Convert single file
+# Convert single PNG file
 ./webp-converter -f image.png
+
+# Convert single JPG file
+./webp-converter -f photo.jpg
 
 # Convert with custom quality
 ./webp-converter -f image.png -q 90
 
-# Convert all PNGs in a directory
+# Convert all images in a directory
 ./webp-converter -d ./photos
 
 # Convert with custom quality and directory
@@ -91,11 +95,14 @@ libsharpyuv: 0.4.1
 **Single File Converter:**
 
 ```bash
-# Default quality (80)
+# PNG file with default quality (100)
 ./convert-single.sh image.png
 
-# Custom quality
-./convert-single.sh image.png 90
+# JPG file with custom quality
+./convert-single.sh photo.jpg 90
+
+# JPEG file with default quality
+./convert-single.sh picture.jpeg
 ```
 
 **Batch Converter:**

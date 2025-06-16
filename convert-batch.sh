@@ -3,7 +3,7 @@
 # Batch convert all PNG files in current directory to WebP
 # Usage: ./convert-batch.sh [quality] [directory]
 
-QUALITY="${1:-80}"
+QUALITY="${1:-100}"
 TARGET_DIR="${2:-.}"
 
 echo "🔄 Batch converting PNG files to WebP..."

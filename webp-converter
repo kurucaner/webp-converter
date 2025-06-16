@@ -15,7 +15,7 @@ USAGE:
 OPTIONS:
     -f, --file <file>        Convert a single PNG file
     -d, --dir <directory>    Convert all PNG files in directory
-    -q, --quality <0-100>    Set quality (default: 80)
+    -q, --quality <0-100>    Set quality (default: 100)
     -h, --help              Show this help message
 
 EXAMPLES:
@@ -47,8 +47,8 @@ interactive_mode() {
         1)
             echo ""
             read -p "Enter PNG file path: " file_path
-            read -p "Enter quality (0-100, default 80): " quality
-            quality=${quality:-80}
+            read -p "Enter quality (0-100, default 100): " quality
+            quality=${quality:-100}
             
             if [ -f "$file_path" ]; then
                 convert_single "$file_path" "$quality"
@@ -60,8 +60,8 @@ interactive_mode() {
             echo ""
             read -p "Enter directory path (default: current directory): " dir_path
             dir_path=${dir_path:-.}
-            read -p "Enter quality (0-100, default 80): " quality
-            quality=${quality:-80}
+            read -p "Enter quality (0-100, default 100): " quality
+            quality=${quality:-100}
             
             if [ -d "$dir_path" ]; then
                 convert_batch "$dir_path" "$quality"
@@ -171,7 +171,7 @@ convert_batch() {
 }
 
 # Parse command line arguments
-QUALITY=80
+QUALITY=100
 FILE=""
 DIR=""
 

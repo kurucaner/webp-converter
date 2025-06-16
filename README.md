@@ -45,7 +45,7 @@ libsharpyuv: 0.4.1
 1. **Clone the repository:**
 
    ```bash
-   git clone https://github.com/your-username/webp-converter.git
+   git clone https://github.com/kurucaner/webp-converter.git
    cd webp-converter
    ```
 

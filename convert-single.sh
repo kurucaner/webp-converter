@@ -5,13 +5,13 @@
 
 if [ $# -eq 0 ]; then
     echo "Usage: $0 <input.png> [quality]"
-    echo "Example: $0 image.png 80"
-    echo "Quality range: 0-100 (default: 80)"
+    echo "Example: $0 image.png 100"
+    echo "Quality range: 0-100 (default: 100)"
     exit 1
 fi
 
 INPUT_FILE="$1"
-QUALITY="${2:-80}"
+QUALITY="${2:-100}"
 
 # Check if input file exists
 if [ ! -f "$INPUT_FILE" ]; then

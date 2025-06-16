@@ -1,0 +1,228 @@
+#!/bin/bash
+
+# WebP Converter - A simple PNG to WebP converter
+# Usage: ./webp-converter
+
+show_help() {
+    cat << EOF
+🖼️  WebP Converter
+
+Convert PNG files to WebP format with ease!
+
+USAGE:
+    ./webp-converter [options]
+
+OPTIONS:
+    -f, --file <file>        Convert a single PNG file
+    -d, --dir <directory>    Convert all PNG files in directory
+    -q, --quality <0-100>    Set quality (default: 80)
+    -h, --help              Show this help message
+
+EXAMPLES:
+    ./webp-converter -f image.png
+    ./webp-converter -f image.png -q 90
+    ./webp-converter -d ./photos -q 85
+    ./webp-converter                    # Interactive mode
+
+QUALITY GUIDE:
+    90-100: Highest quality, larger files
+    80-89:  High quality (recommended)
+    70-79:  Good quality, smaller files
+    0-69:   Lower quality, smallest files
+EOF
+}
+
+interactive_mode() {
+    echo "🖼️  Welcome to WebP Converter!"
+    echo ""
+    echo "What would you like to do?"
+    echo "1) Convert a single PNG file"
+    echo "2) Convert all PNG files in a directory"
+    echo "3) Show help"
+    echo "4) Exit"
+    echo ""
+    read -p "Choose an option (1-4): " choice
+    
+    case $choice in
+        1)
+            echo ""
+            read -p "Enter PNG file path: " file_path
+            read -p "Enter quality (0-100, default 80): " quality
+            quality=${quality:-80}
+            
+            if [ -f "$file_path" ]; then
+                convert_single "$file_path" "$quality"
+            else
+                echo "❌ File not found: $file_path"
+            fi
+            ;;
+        2)
+            echo ""
+            read -p "Enter directory path (default: current directory): " dir_path
+            dir_path=${dir_path:-.}
+            read -p "Enter quality (0-100, default 80): " quality
+            quality=${quality:-80}
+            
+            if [ -d "$dir_path" ]; then
+                convert_batch "$dir_path" "$quality"
+            else
+                echo "❌ Directory not found: $dir_path"
+            fi
+            ;;
+        3)
+            show_help
+            ;;
+        4)
+            echo "👋 Goodbye!"
+            exit 0
+            ;;
+        *)
+            echo "❌ Invalid option. Please choose 1-4."
+            ;;
+    esac
+}
+
+convert_single() {
+    local input_file="$1"
+    local quality="$2"
+    
+    if [[ ! "$input_file" =~ \.png$ ]]; then
+        echo "❌ Input file must be a .png file!"
+        return 1
+    fi
+    
+    local output_file="${input_file%.png}.webp"
+    
+    echo "🔄 Converting '$input_file' to '$output_file' with quality $quality..."
+    
+    if cwebp -q "$quality" "$input_file" -o "$output_file"; then
+        local original_size=$(stat -f%z "$input_file")
+        local webp_size=$(stat -f%z "$output_file")
+        local reduction=$(( (original_size - webp_size) * 100 / original_size ))
+        
+        echo "✅ Conversion successful!"
+        echo "📁 Original: $(numfmt --to=iec-i --suffix=B $original_size)"
+        echo "📁 WebP: $(numfmt --to=iec-i --suffix=B $webp_size)"
+        echo "💾 Size reduction: ${reduction}%"
+    else
+        echo "❌ Conversion failed!"
+        return 1
+    fi
+}
+
+convert_batch() {
+    local target_dir="$1"
+    local quality="$2"
+    
+    echo "🔄 Batch converting PNG files to WebP..."
+    echo "📂 Directory: $target_dir"
+    echo "🎯 Quality: $quality"
+    echo ""
+    
+    local png_count=$(find "$target_dir" -maxdepth 1 -name "*.png" | wc -l)
+    
+    if [ "$png_count" -eq 0 ]; then
+        echo "No PNG files found in '$target_dir'"
+        return 0
+    fi
+    
+    echo "Found $png_count PNG file(s) to convert..."
+    echo ""
+    
+    local converted=0
+    local total_original_size=0
+    local total_webp_size=0
+    
+    for png_file in "$target_dir"/*.png; do
+        [ ! -f "$png_file" ] && continue
+        
+        local filename=$(basename "$png_file")
+        local output_file="${png_file%.png}.webp"
+        
+        echo "Converting: $filename"
+        
+        if cwebp -q "$quality" "$png_file" -o "$output_file" 2>/dev/null; then
+            local original_size=$(stat -f%z "$png_file")
+            local webp_size=$(stat -f%z "$output_file")
+            
+            total_original_size=$((total_original_size + original_size))
+            total_webp_size=$((total_webp_size + webp_size))
+            
+            echo "  ✅ Success ($(numfmt --to=iec-i --suffix=B $original_size) → $(numfmt --to=iec-i --suffix=B $webp_size))"
+            converted=$((converted + 1))
+        else
+            echo "  ❌ Failed"
+        fi
+    done
+    
+    echo ""
+    echo "📊 Conversion Summary:"
+    echo "  Converted: $converted/$png_count files"
+    
+    if [ "$converted" -gt 0 ]; then
+        echo "  Total original size: $(numfmt --to=iec-i --suffix=B $total_original_size)"
+        echo "  Total WebP size: $(numfmt --to=iec-i --suffix=B $total_webp_size)"
+        
+        if [ "$total_original_size" -gt 0 ]; then
+            local total_reduction=$(( (total_original_size - total_webp_size) * 100 / total_original_size ))
+            echo "  💾 Total size reduction: ${total_reduction}%"
+        fi
+    fi
+}
+
+# Parse command line arguments
+QUALITY=80
+FILE=""
+DIR=""
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -f|--file)
+            FILE="$2"
+            shift 2
+            ;;
+        -d|--dir)
+            DIR="$2"
+            shift 2
+            ;;
+        -q|--quality)
+            QUALITY="$2"
+            shift 2
+            ;;
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1"
+            show_help
+            exit 1
+            ;;
+    esac
+done
+
+# Validate quality
+if [[ ! "$QUALITY" =~ ^[0-9]+$ ]] || [ "$QUALITY" -lt 0 ] || [ "$QUALITY" -gt 100 ]; then
+    echo "❌ Quality must be a number between 0 and 100"
+    exit 1
+fi
+
+# Execute based on arguments
+if [ -n "$FILE" ]; then
+    if [ -f "$FILE" ]; then
+        convert_single "$FILE" "$QUALITY"
+    else
+        echo "❌ File not found: $FILE"
+        exit 1
+    fi
+elif [ -n "$DIR" ]; then
+    if [ -d "$DIR" ]; then
+        convert_batch "$DIR" "$QUALITY"
+    else
+        echo "❌ Directory not found: $DIR"
+        exit 1
+    fi
+else
+    # No arguments provided, enter interactive mode
+    interactive_mode
+fi 

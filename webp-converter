@@ -83,6 +83,20 @@ interactive_mode() {
     esac
 }
 
+# Function to convert bytes to human readable format
+format_bytes() {
+    local bytes=$1
+    if [ $bytes -lt 1024 ]; then
+        echo "${bytes}B"
+    elif [ $bytes -lt 1048576 ]; then
+        echo "$(( (bytes + 512) / 1024 ))K"
+    elif [ $bytes -lt 1073741824 ]; then
+        echo "$(( (bytes + 524288) / 1048576 ))M"
+    else
+        echo "$(( (bytes + 536870912) / 1073741824 ))G"
+    fi
+}
+
 convert_single() {
     local input_file="$1"
     local quality="$2"
@@ -110,8 +124,8 @@ convert_single() {
         local reduction=$(( (original_size - webp_size) * 100 / original_size ))
         
         echo "✅ Conversion successful!"
-        echo "📁 Original: $(numfmt --to=iec-i --suffix=B $original_size)"
-        echo "📁 WebP: $(numfmt --to=iec-i --suffix=B $webp_size)"
+        echo "📁 Original: $(format_bytes $original_size)"
+        echo "📁 WebP: $(format_bytes $webp_size)"
         echo "💾 Size reduction: ${reduction}%"
     else
         echo "❌ Conversion failed!"
@@ -169,7 +183,7 @@ convert_batch() {
             total_original_size=$((total_original_size + original_size))
             total_webp_size=$((total_webp_size + webp_size))
             
-            echo "  ✅ Success ($(numfmt --to=iec-i --suffix=B $original_size) → $(numfmt --to=iec-i --suffix=B $webp_size))"
+            echo "  ✅ Success ($(format_bytes $original_size) → $(format_bytes $webp_size))"
             converted=$((converted + 1))
         else
             echo "  ❌ Failed"
@@ -193,8 +207,8 @@ convert_batch() {
     echo "  Converted: $converted/$total_count files"
     
     if [ "$converted" -gt 0 ]; then
-        echo "  Total original size: $(numfmt --to=iec-i --suffix=B $total_original_size)"
-        echo "  Total WebP size: $(numfmt --to=iec-i --suffix=B $total_webp_size)"
+        echo "  Total original size: $(format_bytes $total_original_size)"
+        echo "  Total WebP size: $(format_bytes $total_webp_size)"
         
         if [ "$total_original_size" -gt 0 ]; then
             local total_reduction=$(( (total_original_size - total_webp_size) * 100 / total_original_size ))

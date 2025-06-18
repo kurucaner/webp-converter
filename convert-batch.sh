@@ -3,6 +3,20 @@
 # Batch convert all PNG/JPG files in current directory to WebP
 # Usage: ./convert-batch.sh [quality] [directory]
 
+# Function to convert bytes to human readable format
+format_bytes() {
+    local bytes=$1
+    if [ $bytes -lt 1024 ]; then
+        echo "${bytes}B"
+    elif [ $bytes -lt 1048576 ]; then
+        echo "$(( (bytes + 512) / 1024 ))K"
+    elif [ $bytes -lt 1073741824 ]; then
+        echo "$(( (bytes + 524288) / 1048576 ))M"
+    else
+        echo "$(( (bytes + 536870912) / 1073741824 ))G"
+    fi
+}
+
 QUALITY="${1:-100}"
 TARGET_DIR="${2:-.}"
 
@@ -59,7 +73,7 @@ convert_file() {
         TOTAL_ORIGINAL_SIZE=$((TOTAL_ORIGINAL_SIZE + original_size))
         TOTAL_WEBP_SIZE=$((TOTAL_WEBP_SIZE + webp_size))
         
-        echo "  ✅ Success ($(numfmt --to=iec-i --suffix=B $original_size) → $(numfmt --to=iec-i --suffix=B $webp_size))"
+        echo "  ✅ Success ($(format_bytes $original_size) → $(format_bytes $webp_size))"
         CONVERTED=$((CONVERTED + 1))
     else
         echo "  ❌ Failed"
@@ -83,8 +97,8 @@ echo "📊 Conversion Summary:"
 echo "  Converted: $CONVERTED/$TOTAL_COUNT files"
 
 if [ "$CONVERTED" -gt 0 ]; then
-    echo "  Total original size: $(numfmt --to=iec-i --suffix=B $TOTAL_ORIGINAL_SIZE)"
-    echo "  Total WebP size: $(numfmt --to=iec-i --suffix=B $TOTAL_WEBP_SIZE)"
+    echo "  Total original size: $(format_bytes $TOTAL_ORIGINAL_SIZE)"
+    echo "  Total WebP size: $(format_bytes $TOTAL_WEBP_SIZE)"
     
     if [ "$TOTAL_ORIGINAL_SIZE" -gt 0 ]; then
         TOTAL_REDUCTION=$(( (TOTAL_ORIGINAL_SIZE - TOTAL_WEBP_SIZE) * 100 / TOTAL_ORIGINAL_SIZE ))
